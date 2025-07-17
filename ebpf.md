@@ -191,15 +191,15 @@ Linux 内核通过 security/security.c 公开了大量 LSM hook 点，分为以�
 | -- | -- | -- | 
 | 进程控制	| security_bprm_check, task_kill, ptrace_access_check	| 控制进程执行、信号发送、调试权限等| 
 | 文件操作	| inode_permission, file_open, file_ioctl	| 控制文件打开、访问、权限检查等| 
-网络操作	socket_create, socket_connect, socket_sendmsg	限制网络套接字创建、连接、数据发送
-IPC / 信号量	ipc_permission, sem_associate	控制消息队列、信号量、共享内存等
-模块加载	kernel_module_request	控制模块加载与禁止指定模块
-挂载操作	sb_mount, sb_umount, sb_remount	限制文件系统挂载、卸载等
-内存操作	mmap_file, mmap_addr	控制 mmap 行为，防止可执行映射
-设备控制	dev_alloc_name, dev_create	控制字符块设备的使用与命名
-任务生命周期	task_create, task_free	控制任务创建和销毁行为
-BPF/Perf 相关	perf_event_open, bpf	限制用户开启 perf/bpf 程序
-LSM 自定义	security_add_hooks	插入自定义 hook（用于 eBPF LSM）
+| 网络操作	| socket_create, socket_connect, socket_sendmsg	| 限制网络套接字创建、连接、数据发送| 
+| IPC / 信号量	| ipc_permission, sem_associate	| 控制消息队列、信号量、共享内存等| 
+| 模块加载	| kernel_module_request	| 控制模块加载与禁止指定模块| 
+| 挂载操作	| sb_mount, sb_umount, sb_remount	| 限制文件系统挂载、卸载等| 
+| 内存操作	| mmap_file, mmap_addr	| 控制 mmap 行为，防止可执行映射| 
+| 设备控制	| dev_alloc_name, dev_create	| 控制字符块设备的使用与命名| 
+| 任务生命周期	| task_create, task_free	| 控制任务创建和销毁行为| 
+| BPF/Perf 相关	| perf_event_open, bpf	| 限制用户开启 perf/bpf 程序| 
+| LSM 自定义	| security_add_hooks	| 插入自定义 hook（用于 eBPF LSM）| 
 
 ### 🧬 2. 按照资源维度分类的完整 LSM Hook 表
 
@@ -207,68 +207,72 @@ LSM 自定义	security_add_hooks	插入自定义 hook（用于 eBPF LSM）
 | --| --|- | 
 | 🧵 进程相关	| bprm_check_security, task_create, task_fix_setuid, task_kill, ptrace_access_check	| 控制 exec、fork、信号发送、ptrace 调试| 
 | 📁 文件与 inode	| inode_permission, inode_create, file_open, file_ioctl, file_permission, file_mmap	| 文件打开、创建、mmap 映射、ioctl 使用| 
-🌐 网络	socket_create, socket_connect, socket_bind, inet_conn_request, inet_csk_clone	套接字创建、连接、监听等
-📦 挂载与超级块	sb_mount, sb_remount, sb_umount, sb_kern_mount	文件系统挂载行为控制
-🔗 符号链接和路径	path_truncate, path_unlink, path_symlink	限制软链接、删除行为
-🔧 模块与系统控制	kernel_module_request, capable, quotactl, syslog	控制内核模块、capabilities 使用
-📥 IPC 控制	ipc_permission, shm_shmat, sem_associate	控制 shm、sem、mq 等使用
-🔬 BPF 和 perf	bpf, perf_event_open, perf_event_write	限制加载 BPF 程序、开启 perf events
-🔒 安全上下文	cred_prepare, cred_transfer, task_setscheduler	控制进程身份、调度、用户切换
-🗄️ 安全审计支持	audit_rule_match, audit_rule_free, audit_rule_field	触发审计日志与规则匹配
-🧠 LSM 基础控制	security_add_hooks, init_task_security, cred_alloc_blank	初始化安全属性，自定义扩展
+| 🌐 网络	| socket_create, socket_connect, socket_bind, inet_conn_request, inet_csk_clone	| 套接字创建、连接、监听等| 
+| 📦 挂载与超级块	| sb_mount, sb_remount, sb_umount, sb_kern_mount	| 文件系统挂载行为控制| 
+| 🔗 符号链接和路径| path_truncate, path_unlink, path_symlink	| 限制软链接、删除行为| 
+| 🔧 模块与系统控制	| kernel_module_request, capable, quotactl, syslog	| 控制内核模块、capabilities 使用| 
+| 📥 IPC 控制	| ipc_permission, shm_shmat, sem_associate	| 控制 shm、sem、mq 等使用| 
+| 🔬 BPF 和 perf	| bpf, perf_event_open, perf_event_write	| 限制加载 BPF 程序、开启 perf events| 
+| 🔒 安全上下文	| cred_prepare, cred_transfer, task_setscheduler	| 控制进程身份、调度、用户切换| 
+| 🗄️ 安全审计支持	| audit_rule_match, audit_rule_free, audit_rule_field	| 触发审计日志与规则匹配| 
+| 🧠 LSM 基础控制	| security_add_hooks, init_task_security, cred_alloc_blank	| 初始化安全属性，自定义扩展| 
 
 ### 🧠 3. 各 LSM 使用的典型规则（按模块）
 | 模块	| 常用 Hook 类型	| 示例| 
 | -|- | -| 
 | SELinux	| 几乎使用所有 LSM Hook，基于类型强制访问控制	| inode_permission, bprm_check, socket_create, capable, task_setpgid| 
-AppArmor	主要基于路径的文件访问和执行控制	file_open, bprm_check_security, path_truncate, socket_bind
-Smack	使用简化标签系统，较少 hook	inode_permission, socket_connect, file_open
-TOMOYO	使用路径/程序组合学习策略，文件与进程类 Hook	bprm_check_security, file_open, file_ioctl, task_setuid
-eBPF LSM	用户可选择挂载任意 Hook 点	lsm::file_open, lsm::socket_connect, lsm::task_kill 等自定义函数
+| AppArmor	| 主要基于路径的文件访问和执行控制	| file_open, bprm_check_security, path_truncate, socket_bind| 
+| Smack	| 使用简化标签系统，较少 hook	| inode_permission, socket_connect, file_open| 
+| TOMOYO	| 使用路径/程序组合学习策略，文件与进程类 Hook	| bprm_check_security, file_open, file_ioctl, task_setuid| 
+| eBPF LSM	| 用户可选择挂载任意 Hook 点	| lsm::file_open, lsm::socket_connect, lsm::task_kill 等自定义函数| 
 
 
 ### 📌 总结
 | 功能	| 推荐 Hook| 
 |- |- | 
 | 阻止某些进程运行	| bprm_check_security| 
-控制文件读取	inode_permission, file_open
-阻止特定 IP 连接	socket_connect
-禁止用户加载模块	kernel_module_request
-拦截 mmap 为可执行	file_mmap
-控制某些信号	task_kill
+| 控制文件读取	| inode_permission, file_open| 
+| 阻止特定 IP 连接	| socket_connect| 
+| 禁止用户加载模块	| kernel_module_request| 
+| 拦截 mmap 为可执行	| file_mmap| 
+| 控制某些信号	| task_kill| 
 
 
 
 ## 04 需要生成 struct的 LSM Hook 
 
 ### 🧵 进程类（常涉及 task_struct, cred, linux_binprm）
-Hook 名称	参数	常用目的	需要结构体
-bprm_check_security	*const linux_binprm	拦截进程执行	✅ linux_binprm
-task_kill	*const task_struct	信号控制	✅ task_struct
-task_fix_setuid	*const cred	UID 切换检测	✅ cred
-ptrace_access_check	*const task_struct	调试权限	✅ task_struct
-task_create	*const task_struct	进程克隆/创建	✅ task_struct
+
+| Hook 名称	| 参数	| 常用目的	| 需要结构体| 
+| -|- |- | -| 
+| bprm_check_security	| *const linux_binprm	| 拦截进程执行	| ✅ linux_binprm| 
+| task_kill	| *const task_struct	| 信号控制	| ✅ task_struct| 
+| task_fix_setuid	| *const cred	| UID 切换检测	| ✅ cred| 
+| ptrace_access_check	| *const task_struct	| 调试权限	| ✅ task_struct| 
+| task_create	| *const task_struct	| 进程克隆/创建	| ✅ task_struct| 
 
 ### 📁 文件类（涉及 file, dentry, inode）
-Hook 名称	参数	目的	需要结构体
-file_open	*const file	文件打开拦截	✅ file, dentry, inode
-file_permission	*const file	权限检查	✅ file, cred
-inode_permission	*const inode, *const cred	inode 权限检查	✅ inode, cred
-file_ioctl	*const file, cmd	限制某些 ioctl	✅ file
+| Hook 名称	| 参数	| 目的	| 需要结构体| 
+|- | -|- | -| 
+| file_open	| *const file	| 文件打开拦截	| ✅ file, dentry, inode| 
+| file_permission	| *const file	| 权限检查	| ✅ file, cred| 
+| inode_permission	| *const inode, *const cred	inode | 权限检查	| ✅ inode, cred| 
+| file_ioctl	| *const file, cmd	| 限制某些 ioctl	| ✅ file| 
 
 ### 🌐 网络类（涉及 sock, sockaddr, socket）
-Hook 名称	参数	用途	需要结构体
-socket_connect	*mut sock, *const sockaddr	拦截连接请求	✅ sock, sockaddr
-socket_bind	同上	限制端口绑定	✅ sock, sockaddr
-inet_conn_request	*mut sock, *mut sk_buff	入站连接请求	✅ sock, sk_buff
-socket_create	int family, int type, int protocol	检查 socket 创建参数	❌（无指针参数，不需要 struct）
+| Hook 名称	| 参数	| 用途	| 需要结构体| 
+|- | -|- |- | 
+| socket_connect	| *mut sock, *const sockaddr	| 拦截连接请求	| ✅ sock, sockaddr| 
+| socket_bind	| 同上	| 限制端口绑定	| ✅ sock, sockaddr| 
+| inet_conn_request	| *mut sock, *mut sk_buff	| 入站连接请求	| ✅ sock, sk_buff| 
+| socket_create	| int family, int type, int protocol	| 检查 socket 创建参数	| ❌（无指针参数，不需要 struct）| 
 
 ### 🧪 是否一定要生成结构体？
-不一定：
+**不一定：**
 
-如果你只依靠 UID、GID、capability，可以用 helper（如 bpf_get_current_uid_gid()）直接获取，不需要结构体。
+- 如果你只依靠 UID、GID、capability，可以用 helper（如 bpf_get_current_uid_gid()）直接获取，不需要结构体。
 
-但如果你需要访问结构体的字段（如文件路径、socket 地址、命名空间信息等），就必须通过 aya-tool 生成并安全读取。
+- 但如果你需要访问结构体的字段（如文件路径、socket 地址、命名空间信息等），就必须通过 aya-tool 生成并安全读取。
 
 ### 🛠️ 如何生成结构体？
 ```bash
@@ -281,13 +285,14 @@ aya-tool generate \
 你可以根据用到的 hook 参数选择性生成。
 
 ### 📌 总结
-使用 Hook	是否需要生成结构体？	生成哪些？
-bprm_check_security	✅	linux_binprm
-task_kill	✅	task_struct
-file_open	✅	file, dentry
-socket_connect	✅	sock, sockaddr
-socket_create	❌	无结构体指针，不必生成
-capable	❌	可通过 helper 获取 uid、cap，无需结构体
+| 使用 Hook	| 是否需要生成结构体？	| 生成哪些？| 
+|- |- |- | 
+| bprm_check_security	| ✅	| linux_binprm| 
+| task_kill	| ✅	| task_struct| 
+| file_open	| ✅	| file, dentry| 
+| socket_connect	| ✅	| sock, sockaddr| 
+| socket_create	| ❌	| 无结构体指针，不必生成| 
+| capable	| ❌	| 可通过 helper 获取 uid、cap，无需结构体| 
 
 
 
@@ -307,41 +312,47 @@ capable	❌	可通过 helper 获取 uid、cap，无需结构体
 
 **主要能力：**
 
-功能	示例
-阻止某些行为（返回非 0）	拦截 root exec、写文件、kill 等
-检查权限	UID、GID、CAP、SELinux label、文件 inode
-微观访问控制（MAC）	拦截 socket_bind、file_open、ptrace 等
-最终结果影响系统行为	拒绝某行为
+| 功能	| 示例| 
+| -| -| 
+| 阻止某些行为（返回非 0）	| 拦截 root exec、写文件、kill 等| 
+| 检查权限	| UID、GID、CAP、SELinux label、文件 inode| 
+| 微观访问控制（MAC）	| 拦截 socket_bind、file_open、ptrace 等| 
+| 最终结果影响系统行为	| 拒绝某行为| 
 
 **LSM 的局限：**
 
-不适合的场景	原因
-无安全语义的性能采样	LSM hook 不存在于调度器、内存分配路径
-网络包的早期处理（XDP 层）	LSM hook 无法插入网卡驱动入口
-用户态函数跟踪	无法 hook 到用户空间代码（需要 uprobe）
-内核任意函数调用跟踪	只能 hook LSM 插桩点，hook 不到普通函数
-原始事件观察（如 syscall latency）	无直接 hook，需使用 tracepoint/kprobe
+| 不适合的场景	| 原因| 
+|- | -| 
+| 无安全语义的性能采样	| LSM hook 不存在于调度器、内存分配路径| 
+| 网络包的早期处理（XDP 层）	| LSM hook 无法插入网卡驱动入口| 
+| 用户态函数跟踪	| 无法 hook 到用户空间代码（需要 uprobe）| 
+| 内核任意函数调用跟踪	| 只能 hook LSM 插桩点，hook 不到普通函数| 
+| 原始事件观察（如 syscall latency）	| 无直接 hook，需使用 tracepoint/kprobe| 
 
 ### 🔩 为什么还需要 kprobe、tracepoint、uprobe、XDP 等？
-eBPF 类型	可 hook 场景	用途
-kprobe	任意内核函数（如 do_sys_openat2）	内核函数行为观测、动态分析
-tracepoint	内核定义好的静态点（如 sched_process_exit）	稳定观测点，性能低开销
-uprobe	任意用户态函数（如 libc 中的 malloc）	追踪用户进程行为
-XDP	网络驱动层入口	高性能包过滤（DDoS 防护等）
-tc	网络协议栈层	更细粒度包处理
-perf_event	计时器 / 硬件事件	周期性采样、性能分析
-LSM	LSM 安全接口（有限函数）	安全策略判断与拒绝操作
+
+| eBPF 类型	| 可 hook 场景	| 用途| 
+| -|-| -| 
+| kprobe	| 任意内核函数（如 do_sys_openat2）	| 内核函数行为观测、动态分析| 
+| tracepoint	| 内核定义好的静态点（如 sched_process_exit）	| 稳定观测点，性能低开销| 
+| uprobe	| 任意用户态函数（如 libc 中的 malloc）| 	追踪用户进程行为| 
+| XDP	| 网络驱动层入口	| 高性能包过滤（DDoS 防护等）| 
+| tc	| 网络协议栈层	| 更细粒度包处理| 
+| perf_event	| 计时器 / 硬件事件	| 周期性采样、性能分析| 
+| LSM	| LSM 安全接口（有限函数）	| 安全策略判断与拒绝操作| 
 
 ### 🧪 示例对比：你需要谁？
-✅ 你想：
-目标	类型
-禁止 root 执行某些程序	✅ LSM
-查看哪个进程占用 IO 高	❌ LSM 无法，需 tracepoint/kprobe
-抓取 syscall 执行时间分布	❌ LSM 无法，需 tracepoint
-捕获用户空间函数参数	❌ LSM 无法，需 uprobe
-拦截网络包在驱动层	❌ LSM 无法，需 XDP
-分析 TCP 重传	❌ LSM 无法，需 kprobe + sk_buff
-记录所有 execve 的命令行	✅ LSM 可读 linux_binprm，但性能上 tracepoint 也可以
+
+**✅ 目标：**
+| 目标	| 类型| 
+| -| -| 
+| 禁止 | root 执行某些程序	| ✅ LSM| 
+| 查看哪个进程占用 IO 高	| ❌ LSM 无法，需 tracepoint/kprobe| 
+| 抓取 syscall 执行时间分布	| ❌ LSM 无法，需 tracepoint| 
+| 捕获用户空间函数参数	| ❌ LSM 无法，需 uprobe| 
+| 拦截网络包在驱动层	| ❌ LSM 无法，需 XDP| 
+| 分析 TCP 重传	| ❌ LSM 无法，需 kprobe + sk_buff| 
+| 记录所有 execve 的命令行	| ✅ LSM 可读 linux_binprm，但性能上 tracepoint 也可以| 
 
 ### 📌 总结一句话：
 **LSM eBPF 程序是安全控制的王者，但无法观察/分析整个系统行为。kprobe、tracepoint 等其他类型让 eBPF 成为一把系统可观测性“瑞士军刀”。**
